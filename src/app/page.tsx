@@ -12,6 +12,7 @@ import {
   Sparkles,
   Users
 } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { AITutor } from "@/components/AITutor";
 import { ProgressChart } from "@/components/ProgressChart";
@@ -39,8 +40,15 @@ import { LessonQuestionCategory, MistakeRecord, Question, SubjectName, Unit } fr
 
 const storageKey = "beian-ai-learning-mistakes";
 const progressKey = "beian-ai-learning-reviewed-units";
+const routeToTab: Record<string, string> = {
+  "/student": "dashboard",
+  "/parent": "parent",
+  "/practice": "review"
+};
 
 export default function Home() {
+  const pathname = usePathname();
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState("dashboard");
   const [activeSubject, setActiveSubject] = useState<SubjectName>("國文");
   const [activeUnitId, setActiveUnitId] = useState(units[0].id);
@@ -56,6 +64,11 @@ export default function Home() {
     if (savedMistakes) setMistakes(JSON.parse(savedMistakes));
     if (savedProgress) setReviewedUnits(JSON.parse(savedProgress));
   }, []);
+
+  useEffect(() => {
+    const routedTab = routeToTab[pathname];
+    if (routedTab) setActiveTab(routedTab);
+  }, [pathname]);
 
   useEffect(() => {
     window.localStorage.setItem(storageKey, JSON.stringify(mistakes));
@@ -153,6 +166,13 @@ export default function Home() {
     { id: "parent", label: "家長週報", icon: Users }
   ];
 
+  function switchTab(tabId: string) {
+    setActiveTab(tabId);
+    if (tabId === "dashboard") router.push("/student");
+    if (tabId === "parent") router.push("/parent");
+    if (tabId === "review") router.push("/practice");
+  }
+
   return (
     <main className="min-h-screen">
       <header className="border-b bg-white">
@@ -188,7 +208,7 @@ export default function Home() {
                 className={`mb-1 flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-semibold transition ${
                   activeTab === tab.id ? "bg-primary text-primary-foreground" : "hover:bg-muted"
                 }`}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => switchTab(tab.id)}
                 type="button"
               >
                 <Icon className="h-4 w-4" />
@@ -216,7 +236,7 @@ export default function Home() {
                 <CardContent className="space-y-3">
                   <Progress value={reviewedRate} />
                   <p className="text-sm text-muted-foreground">目前完成率 {reviewedRate}% 。建議每天完成 2 個單元與 5 題練習。</p>
-                  <Button onClick={() => setActiveTab("review")}>開始全年複習</Button>
+                  <Button onClick={() => switchTab("review")}>開始全年複習</Button>
                 </CardContent>
               </Card>
               <Card className="col-span-12 md:col-span-4">
